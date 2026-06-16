@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Medical Note Translator - A Solace Concept Prototype</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #FAFAF8;
+    color: #1A1A1A;
+    margin: 0;
+    padding: 2rem 1rem;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 500;
+    margin: 0 0 0.5rem;
+    color: #1A1A1A;
+  }
+  .header p {
+    font-size: 15px;
+    color: #5F5E5A;
+    margin: 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .byline {
+    font-size: 13px;
+    color: #888780;
+    margin-top: 8px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 1rem;
+  }
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .panel-label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #1A1A1A;
+  }
+  textarea {
+    width: 100%;
+    min-height: 360px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid #D3D1C7;
+    background: #FFFFFF;
+    color: #1A1A1A;
+    line-height: 1.6;
+  }
+  textarea:focus {
+    outline: none;
+    border-color: #534AB7;
+    box-shadow: 0 0 0 3px rgba(83, 74, 183, 0.15);
+  }
+  button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #FFFFFF;
+    background: #534AB7;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  button:hover:not(:disabled) { background: #3C3489; }
+  button:disabled { background: #B4B2A9; cursor: not-allowed; }
+  .empty-state, .loading-state {
+    background: #F1EFE8;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    color: #888780;
+    font-size: 14px;
+    min-height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .error-state {
+    background: #FCEBEB;
+    border-radius: 8px;
+    padding: 14px 18px;
+    color: #791F1F;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .results { display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    background: #FFFFFF;
+    border: 1px solid #D3D1C7;
+    border-radius: 8px;
+    padding: 14px 18px;
+  }
+  .card-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #5F5E5A;
+    margin: 0 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .card-text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1A1A1A;
+  }
+  .severity-card {
+    border-left: 4px solid;
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+  }
+  .severity-card p { margin: 0 0 4px; font-size: 13px; }
+  .severity-card .severity-label { font-weight: 500; font-size: 14px; }
+  .glossary-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #F1EFE8;
+  }
+  .glossary-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .glossary-item:first-child { padding-top: 0; }
+  .glossary-term {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1A1A1A;
+    margin: 0 0 2px;
+  }
+  .glossary-def {
+    font-size: 13px;
+    color: #5F5E5A;
+    margin: 0;
+    line-height: 1.5;
+  }
+  .question-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #F1EFE8;
+  }
+  .question-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .question-item:first-child { padding-top: 0; }
+  .question-number {
+    font-size: 13px;
+    color: #888780;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+  .question-text {
+    font-size: 14px;
+    color: #1A1A1A;
+    line-height: 1.5;
+  }
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #D3D1C7;
+    text-align: center;
+    font-size: 13px;
+    color: #888780;
+  }
+  .footer p { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Medical note translator</h1>
+    <p>Paste a medical note, lab result, or after-visit summary and get a plain English translation, glossary, and questions to ask your doctor.</p>
+    <p class="byline">A concept prototype built with the Claude API by Evan Airey</p>
+  </div>
+
+  <div class="grid">
+
+    <div>
+      <div class="panel-label">Your medical note</div>
+      <textarea id="medical-input" placeholder="Paste your medical note here. Try one like: Patient presents with elevated BP 158/94, LDL cholesterol 167 mg/dL, HbA1c 6.8%. Cardiac auscultation revealed S4 gallop. ECG showed left ventricular hypertrophy. Recommend initiating lisinopril 10mg daily and atorvastatin 20mg daily. Follow-up in 4 weeks for repeat lipid panel and BP check."></textarea>
+      <button id="translate-btn">Translate this for me</button>
+    </div>
+
+    <div>
+      <div class="panel-label">Translation</div>
+      <div id="empty-state" class="empty-state">Your translation will appear here.</div>
+      <div id="loading-state" class="loading-state" style="display: none;">Translating your note...</div>
+      <div id="error-state" class="error-state" style="display: none;">Something went wrong. Please try again.</div>
+      <div id="results" class="results" style="display: none;"></div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <p>Concept prototype for demonstration purposes. Do not enter real protected health information.</p>
+    <p>Built by Evan Airey | Inspired by Solace's mission to make healthcare navigable for everyone.</p>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const btn = document.getElementById('translate-btn');
+  const input = document.getElementById('medical-input');
+  const emptyState = document.getElementById('empty-state');
+  const loadingState = document.getElementById('loading-state');
+  const errorState = document.getElementById('error-state');
+  const results = document.getElementById('results');
+
+  const severityStyles = {
+    'routine': { bg: '#EAF3DE', text: '#27500A', border: '#639922', label: 'Routine - no urgent action needed' },
+    'follow-up soon': { bg: '#FAEEDA', text: '#633806', border: '#BA7517', label: 'Follow up soon - schedule within a week' },
+    'contact doctor today': { bg: '#FCEBEB', text: '#791F1F', border: '#E24B4A', label: 'Contact your doctor today' }
+  };
+
+  const API_KEY = ''; // User must add their Anthropic API key here
+
+  btn.addEventListener('click', async function() {
+    const noteText = input.value.trim();
+    if (!noteText) {
+      input.focus();
+      return;
+    }
+
+    if (!API_KEY) {
+      errorState.textContent = 'Please add an Anthropic API key in the HTML source to use this tool.';
+      emptyState.style.display = 'none';
+      results.style.display = 'none';
+      errorState.style.display = 'block';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    errorState.style.display = 'none';
+    results.style.display = 'none';
+    loadingState.style.display = 'flex';
+    btn.disabled = true;
+    btn.textContent = 'Translating...';
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-5",
+          max_tokens: 1500,
+          messages: [{
+            role: "user",
+            content: "You are helping a patient understand a medical document. The patient is not a medical professional and may be older or stressed. Translate the following medical note into plain English at a 6th grade reading level.\n\nMedical note:\n\"\"\"\n" + noteText + "\n\"\"\"\n\nRespond ONLY with valid JSON in this exact format, no preamble or markdown:\n{\n  \"summary\": \"A 2-4 sentence plain English summary of what this note says, written at a 6th grade reading level.\",\n  \"glossary\": [\n    {\"term\": \"medical term used\", \"definition\": \"simple definition a non-medical person would understand\"}\n  ],\n  \"questions\": [\n    \"A specific question the patient should ask their doctor based on this note\",\n    \"Another specific question\"\n  ],\n  \"severity\": \"routine\",\n  \"severity_reason\": \"One sentence explaining why this severity level\"\n}\n\nThe severity field must be exactly one of: \"routine\", \"follow-up soon\", or \"contact doctor today\". Include 3-6 glossary terms and 3-5 questions. Be specific to this note, not generic."
+          }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed: ' + response.status);
+      }
+
+      const data = await response.json();
+      let textContent = data.content.find(c => c.type === "text").text;
+      textContent = textContent.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(textContent);
+
+      const sev = severityStyles[parsed.severity] || severityStyles['routine'];
+
+      let html = '';
+
+      html += '<div class="severity-card" style="background: ' + sev.bg + '; border-left-color: ' + sev.border + ';">' +
+        '<p class="severity-label" style="color: ' + sev.text + ';">' + sev.label + '</p>' +
+        '<p style="color: ' + sev.text + ';">' + parsed.severity_reason + '</p>' +
+      '</div>';
+
+      html += '<div class="card">' +
+        '<p class="card-label">Plain English summary</p>' +
+        '<p class="card-text">' + parsed.summary + '</p>' +
+      '</div>';
+
+      let glossaryHtml = parsed.glossary.map(function(g) {
+        return '<div class="glossary-item">' +
+          '<p class="glossary-term">' + g.term + '</p>' +
+          '<p class="glossary-def">' + g.definition + '</p>' +
+        '</div>';
+      }).join('');
+
+      html += '<div class="card">' +
+        '<p class="card-label">Terms explained</p>' +
+        '<div>' + glossaryHtml + '</div>' +
+      '</div>';
+
+      let questionsHtml = parsed.questions.map(function(q, i) {
+        return '<div class="question-item">' +
+          '<span class="question-number">' + (i + 1) + '.</span>' +
+          '<span class="question-text">' + q + '</span>' +
+        '</div>';
+      }).join('');
+
+      html += '<div class="card">' +
+        '<p class="card-label">Questions to ask your doctor</p>' +
+        '<div>' + questionsHtml + '</div>' +
+      '</div>';
+
+      results.innerHTML = html;
+      loadingState.style.display = 'none';
+      results.style.display = 'flex';
+
+    } catch (err) {
+      console.error("Translation error:", err);
+      loadingState.style.display = 'none';
+      errorState.textContent = 'Something went wrong. Please check the API key and try again.';
+      errorState.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Translate this for me';
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
